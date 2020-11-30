@@ -1,0 +1,14 @@
+.cache
+.classpath
+.idea
+.metadata
+.settings
+.project
+.version.properties
+dependency-reduced-pom.xml
+target
+tmp
+*.class
+*.iml
+*.ipr
+*.iws
