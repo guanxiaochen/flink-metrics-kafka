@@ -32,10 +32,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.apache.flink.metrics.kafka.KafkaReporterOptions.*;
@@ -59,6 +56,7 @@ public class KafkaReporter implements MetricReporter, CharacterFilter, Scheduled
 	// the initial size roughly fits ~150 metrics with default scope settings
 
 	private KafkaProducer<String, String> kafkaProducer;
+	private String servers;
 	private String topic;
 	private String keyBy;
 
@@ -89,18 +87,15 @@ public class KafkaReporter implements MetricReporter, CharacterFilter, Scheduled
 
 	@Override
 	public void open(MetricConfig config) {
+		servers = config.getString(SERVERS.key(), SERVERS.defaultValue());
 		topic = config.getString(TOPIC.key(), TOPIC.defaultValue());
 		keyBy = config.getString(KEY_BY.key(), KEY_BY.defaultValue());
 
-		String servers = config.getString(SERVERS.key(), SERVERS.defaultValue());
 
 		Properties properties = new Properties();
-		properties.put("bootstrap.servers", servers);
-		properties.put("acks", config.getString("acks", "all"));
-		properties.put("retries", config.getInteger("retries", 0));
-		properties.put("batch.size", config.getInteger("batch.size", 16384));
-		properties.put("linger.ms", config.getInteger("linger.ms", 1));
-		properties.put("buffer.memory", config.getInteger("buffer.memory", 33554432));
+		properties.putAll(config);
+		properties.remove(TOPIC.key());
+		properties.remove(KEY_BY.key());
 
 		Thread.currentThread().setContextClassLoader(null);
 		kafkaProducer = new KafkaProducer<>(properties, new StringSerializer(), new StringSerializer());
