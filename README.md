@@ -4,6 +4,7 @@
 | 配置项| 默认值| 必填| 例| 说明 |
 | --- | --- | ---| ---| --- |
 | bootstrap.servers| | 是 | localhost:9092| kafka地址 |
+| cluster| | 否 | testa | 集群名称 |
 | topic| flink-metrics | 否 | | kafka主题 |
 | kdyBy| | 否 | host | kafka key属性名 |
 
@@ -22,6 +23,7 @@
 metrics.reporters: kafka
 metrics.reporter.kafka.class: org.apache.flink.metrics.kafka.KafkaReporter
 metrics.reporter.kafka.bootstrap.servers: localhost:9092
+metrics.reporter.kafka.cluster: cluster4
 metrics.reporter.kafka.topic: flink-metrics
 metrics.reporter.kafka.keyBy: task_attempt_id
 metrics.reporter.kafka.acks: all

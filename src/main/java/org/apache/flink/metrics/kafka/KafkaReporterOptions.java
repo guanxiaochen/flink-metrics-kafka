@@ -31,6 +31,11 @@ import org.apache.flink.configuration.description.TextElement;
 @Documentation.SuffixOption
 public class KafkaReporterOptions {
 
+	public static final ConfigOption<String> CLUSTER = ConfigOptions
+			.key("cluster")
+			.noDefaultValue()
+			.withDescription("The name of flink cluster");
+
 	public static final ConfigOption<String> SERVERS = ConfigOptions
 		.key("bootstrap.servers")
 		.noDefaultValue()
@@ -44,6 +49,6 @@ public class KafkaReporterOptions {
 	public static final ConfigOption<String> KEY_BY = ConfigOptions
 		.key("keyBy")
 		.defaultValue("")
-		.withDescription("The key name of kafka kafka producer");
+		.withDescription("The key name of kafka producer");
 
 }

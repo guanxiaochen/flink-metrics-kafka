@@ -76,7 +76,7 @@ public class KafkaReporterTest extends TestLogger {
 
 		registry = new MetricRegistryImpl(
 			MetricRegistryConfiguration.fromConfiguration(configuration),
-			Collections.singletonList(createReporterSetup("kafka-test", "tm-cdh-04:9092", "task_attempt_id")));
+			Collections.singletonList(createReporterSetup("kafka-test", "localhost:9092", "task_attempt_id")));
 
 		taskMetricGroup = new TaskManagerMetricGroup(registry, HOST_NAME, TASK_MANAGER_ID)
 			.addTaskForJob(new JobID(), JOB_NAME, new JobVertexID(), new ExecutionAttemptID(), TASK_NAME, 0, 0);
