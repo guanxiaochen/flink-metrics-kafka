@@ -74,12 +74,6 @@ under the License.
 		</dependency>
 
 		<dependency>
-			<groupId>com.alibaba</groupId>
-			<artifactId>fastjson</artifactId>
-			<version>1.2.73</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka_2.11</artifactId>
 			<version>2.1.0-cdh6.2.0</version>
@@ -99,6 +93,7 @@ under the License.
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-test-utils-junit</artifactId>
 			<version>${project.version}</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -137,7 +132,6 @@ under the License.
 							<artifactSet>
 								<includes>
 									<include>org.apache.kafka:*</include>
-									<include>com.alibaba:fastjson</include>
 								</includes>
 							</artifactSet>
 						</configuration>

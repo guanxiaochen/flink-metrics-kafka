@@ -18,7 +18,6 @@
 
 package org.apache.flink.metrics.kafka;
 
-import com.alibaba.fastjson.JSONObject;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.metrics.*;
 import org.apache.flink.metrics.reporter.InstantiateViaFactory;
@@ -26,13 +25,14 @@ import org.apache.flink.metrics.reporter.MetricReporter;
 import org.apache.flink.metrics.reporter.Scheduled;
 import org.apache.flink.runtime.metrics.groups.AbstractMetricGroup;
 import org.apache.flink.runtime.metrics.groups.FrontMetricGroup;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -69,6 +69,9 @@ public class KafkaReporter implements MetricReporter, CharacterFilter, Scheduled
     protected final Map<Histogram, Map<String, String>> histograms = new HashMap<>();
     protected final Map<Meter, Map<String, String>> meters = new HashMap<>();
 
+
+    private ObjectMapper mapper = new ObjectMapper();
+
     @VisibleForTesting
     Map<Gauge<?>, Map<String, String>> getGauges() {
         return gauges;
@@ -101,13 +104,23 @@ public class KafkaReporter implements MetricReporter, CharacterFilter, Scheduled
 
 
         Properties properties = new Properties();
-        properties.putAll(config);
-        properties.remove(CLUSTER.key());
-        properties.remove(TOPIC.key());
-        properties.remove(KEY_BY.key());
+        properties.put(SERVERS.key(), servers);
+        for (Object keyObj : config.keySet()) {
+            String key = keyObj.toString();
+            if (key.startsWith("prop.")) {
+                properties.put(key.substring(5), config.getString(key, ""));
+            }
+        }
 
-        Thread.currentThread().setContextClassLoader(null);
-        kafkaProducer = new KafkaProducer<>(properties, new StringSerializer(), new StringSerializer());
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(null);
+            kafkaProducer = new KafkaProducer<>(properties, new StringSerializer(), new StringSerializer());
+        } catch (Exception e) {
+            log.warn("KafkaReporter init error.", e);
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
     }
 
     @Override
@@ -168,52 +181,50 @@ public class KafkaReporter implements MetricReporter, CharacterFilter, Scheduled
     public void report() {
         try {
             tryReport();
-        } catch (ConcurrentModificationException ignored) {
-            // at tryReport() we don't synchronize while iterating over the various maps which might cause a
-            // ConcurrentModificationException to be thrown, if concurrently a metric is being added or removed.
+        } catch (Exception ignored) {
+            log.warn("KafkaReporter report error: {}", ignored.getMessage());
         }
     }
 
-    private void tryReport() {
+    private void tryReport() throws JsonProcessingException {
         if (kafkaProducer == null) {
             return;
         }
         long timeStamp = System.currentTimeMillis();
         for (Map.Entry<Counter, Map<String, String>> metric : counters.entrySet()) {
-            JSONObject json = new JSONObject();
+            Map<String, Object> json = new HashMap<>();
             json.put("cluster", cluster);
             json.put("time_stamp", timeStamp);
             json.putAll(metric.getValue());
             json.put("value", metric.getKey().getCount());
             String key = keyBy.isEmpty() ? null : metric.getValue().get(keyBy);
-            kafkaProducer.send(new ProducerRecord<>(topic, key, json.toJSONString()));
+            kafkaProducer.send(new ProducerRecord<>(topic, key, mapper.writeValueAsString(json)));
         }
 
         for (Map.Entry<Gauge<?>, Map<String, String>> metric : gauges.entrySet()) {
-            JSONObject json = new JSONObject();
+            Map<String, Object> json = new HashMap<>();
             json.put("cluster", cluster);
             json.put("time_stamp", timeStamp);
             json.putAll(metric.getValue());
             json.put("value", metric.getKey().getValue());
             String key = keyBy.isEmpty() ? null : metric.getValue().get(keyBy);
-            kafkaProducer.send(new ProducerRecord<>(topic, key, json.toJSONString()));
+            kafkaProducer.send(new ProducerRecord<>(topic, key, mapper.writeValueAsString(json)));
         }
 
-
         for (Map.Entry<Meter, Map<String, String>> metric : meters.entrySet()) {
-            JSONObject json = new JSONObject();
+            Map<String, Object> json = new HashMap<>();
             json.put("cluster", cluster);
             json.put("time_stamp", timeStamp);
             json.putAll(metric.getValue());
             json.put("value", metric.getKey().getRate());
             String key = keyBy.isEmpty() ? null : metric.getValue().get(keyBy);
-            kafkaProducer.send(new ProducerRecord<>(topic, key, json.toJSONString()));
+            kafkaProducer.send(new ProducerRecord<>(topic, key, mapper.writeValueAsString(json)));
         }
 
 
         for (Map.Entry<Histogram, Map<String, String>> metric : histograms.entrySet()) {
             HistogramStatistics stats = metric.getKey().getStatistics();
-            JSONObject value = new JSONObject();
+            Map<String, Object> value = new HashMap<>();
             value.put("count", stats.size());
             value.put("min", stats.getMin());
             value.put("max", stats.getMax());
@@ -226,13 +237,13 @@ public class KafkaReporter implements MetricReporter, CharacterFilter, Scheduled
             value.put("p99", stats.getQuantile(0.99));
             value.put("p999", stats.getQuantile(0.999));
 
-            JSONObject json = new JSONObject();
+            Map<String, Object> json = new HashMap<>();
             json.put("cluster", cluster);
             json.put("time_stamp", timeStamp);
             json.putAll(metric.getValue());
             json.put("value", value);
             String key = keyBy.isEmpty() ? null : metric.getValue().get(keyBy);
-            kafkaProducer.send(new ProducerRecord<>(topic, key, json.toJSONString()));
+            kafkaProducer.send(new ProducerRecord<>(topic, key, mapper.writeValueAsString(json)));
         }
     }
 

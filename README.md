@@ -8,7 +8,7 @@
 | topic| flink-metrics | 否 | | kafka主题 |
 | kdyBy| | 否 | host | kafka key属性名 |
 
-## 其他kafka配置(非必填)
+## 其他kafka.prop配置(非必填)
 | 配置项| 例|
 | --- | ---|
 | acks| all | 
@@ -26,10 +26,10 @@ metrics.reporter.kafka.bootstrap.servers: localhost:9092
 metrics.reporter.kafka.cluster: cluster4
 metrics.reporter.kafka.topic: flink-metrics
 metrics.reporter.kafka.keyBy: task_attempt_id
-metrics.reporter.kafka.acks: all
-metrics.reporter.kafka.retries: 0
-metrics.reporter.kafka.batch.size: 16384
-metrics.reporter.kafka.linger.ms: 1
-metrics.reporter.kafka.buffer.memory: 33554432
-metrics.reporter.kafka.interval: 60 SECONDS
+metrics.reporter.kafka.prop.acks: all
+metrics.reporter.kafka.prop.retries: 0
+metrics.reporter.kafka.prop.batch.size: 16384
+metrics.reporter.kafka.prop.linger.ms: 1
+metrics.reporter.kafka.prop.buffer.memory: 33554432
+metrics.reporter.kafka.prop.interval: 60 SECONDS
 ``` 

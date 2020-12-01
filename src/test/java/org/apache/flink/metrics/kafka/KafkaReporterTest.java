@@ -64,7 +64,7 @@ public class KafkaReporterTest extends TestLogger {
 		MetricConfig metricConfig = new MetricConfig();
 		metricConfig.setProperty(KafkaReporterOptions.SERVERS.key(), servers);
 		metricConfig.setProperty("keyBy", keyBy);
-		metricConfig.setProperty("acks", "all");
+		metricConfig.setProperty("prop.acks", "all");
 
 		return ReporterSetup.forReporter(reporterName, metricConfig, new KafkaReporter());
 	}
